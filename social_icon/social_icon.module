@@ -1,0 +1,120 @@
+<?php
+function social_icon_menu() {
+
+    $items['admin/config/administration/social_icon'] = array(
+        'title' => t('Social icon'),
+        'description' => t('Setting social icon'),
+        'page callback' => 'social_icon_list',
+        'access callback' => TRUE,
+        'access arguments' => array('administer site configuration'),
+        'type' => MENU_NORMAL_ITEM,
+    );
+    $items['admin/config/administration/social_icon/list'] = array(
+        'title' => t('Social icon List'),
+        'description' => t('Social icon List'),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'weight' => 0,
+    );
+    $items['admin/config/administration/social_icon/form'] = array(
+        'title' => t('Add Social Icon'),
+        'description' => t('Setting social icon'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('social_icon_form'),
+        'access callback' => TRUE,
+        'access arguments' => array('administer site configuration'),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 1,
+    );
+
+    return $items;
+}
+
+
+function social_icon_list() {
+    $social_icons = db_select('social_icon', 'si')->fields('si', array('title', 'url', 'icon', 'hover_icon'))->orderBy('si.id')->execute();
+  // dpm($social_icons);
+    $header = array(t('Title'), t('Link'), t('Icon'), t('Hover Icon'));
+    $rows = array();
+
+    foreach ($social_icons as $icon) {
+        $rows[] = array($icon->title, $icon->url, $icon->icon, $icon->hover_icon);
+    }
+
+    $output = theme('table', array('header' => $header, 'rows' => $rows));
+
+    return $output;
+}
+
+//dpm();
+
+function social_icon_form($form, &$form_state) {
+
+    $form['setting'] = array(
+        '#title' => t('Add icon'),
+        '#type' => 'fieldset',
+        '#required' => TRUE,
+    );
+    $form['setting']['title'] = array(
+        '#title' => t('Title'),
+        '#type' => 'textfield',
+        '#maxlength' => 124,
+        '#size' => 60,
+        '#required' => TRUE,
+    );
+    $form['setting']['url'] = array(
+        '#title' => t('Link'),
+        '#type' => 'textfield',
+        '#maxlength' => 124,
+        '#required' => TRUE,
+        '#description' => t('Input link in format "http://" or "https://".')
+    );
+    $form['setting']['icon'] = array(
+        '#title' => t('Upload icon'),
+        '#type' => 'managed_file',
+        //  '#required' => TRUE,
+
+    );
+    $form['setting']['hover_icon'] = array(
+        '#title' => t('Upload hover icon'),
+        '#type' => 'managed_file',
+        //  '#required' => TRUE,
+
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit')
+    );
+
+    return $form;
+}
+
+
+
+
+function social_icon_form_validate($form_id, $form_state) {
+
+    if (!preg_match('/^(http|https):\/\//', $form_state['values']['url'])) {
+        form_set_error('url', t('"Url" do not begin "http://" or "https://"'));
+    }
+}
+
+
+function social_icon_form_submit($form, $form_state) {
+
+    $file = file_load($form_state['values']['icon']);
+    $file->status = FILE_STATUS_PERMANENT;
+    file_save($file);
+
+   // dpm(file_load($form_state['values']['icon']));
+    $query = db_insert('social_icon')
+        ->fields(array(
+            'title' => $form_state['values']['title'],
+            'url' => $form_state['values']['url'],
+            'icon' => $form_state['values']['icon'],
+            'hover_icon' => $form_state['values']['hover_icon'],
+        ))
+        ->execute();
+
+
+}
