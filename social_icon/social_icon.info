@@ -4,4 +4,6 @@ package = Social icon
 core = 7.x
 files[] = social_icon.module
 files[] = social_icon.install
+stylesheets[all][] = social_icon.css
+scripts[] = social_icon.js
 configure = admin/config/administration/social_icon
